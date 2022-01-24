@@ -87,7 +87,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
 - Testing of statistical hypotheses:
 
-    - test for expected value
+    - test for expected value (Bartłomiej Jabłoński - Maybe I will also cover the below tests if the selected topic is too trivial.)
 
     - minimal sample count
 
