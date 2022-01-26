@@ -117,7 +117,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
 
 
-- Non parametric statistics
+- Non parametric statistics (Jacek Wolski)
 
     - Sign Test
 
