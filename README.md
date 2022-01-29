@@ -73,7 +73,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
 
 
-- Distributions
+- Distributions (I can take of that Stanisław Zakrzewski)
 
     - https://www.statskingdom.com/distribution-calculator.html
 
