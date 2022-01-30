@@ -111,7 +111,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
     - linear regression (Barbara Morawska, as Bartłomiej Jabłoński, if that's not enough I'll take whole chapter.)
 
-    - t-student test
+    - t-student test (I've already done t-test in distributions, so I'll do it here Stanisław Zakrzewski)
 
     - ANOVA
 
