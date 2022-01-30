@@ -1,6 +1,7 @@
 # Stanisław Zakrzewski 30/01/2022 - t-test paired and unpaired tests
 
 import math
+# Only using this function for getting p_value from table
 from scipy.stats import t
 
 
