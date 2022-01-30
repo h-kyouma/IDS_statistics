@@ -1,4 +1,4 @@
-# Stanisław Zakrzewski 30/01/2022 - normal distribution
+# Stanisław Zakrzewski 30/01/2022 - t-student distribution
 
 import math
 from scipy.integrate import quad
