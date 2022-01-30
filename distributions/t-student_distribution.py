@@ -4,8 +4,8 @@ import math
 from scipy.integrate import quad
 
 
-def probability_for_normal_distribution(t_student, x):
-    return quad(t_student, -math.inf, x)[0]
+def probability_for_normal_distribution(t_student_distribution, x):
+    return quad(t_student_distribution, -math.inf, x)[0]
 
 
 def z_score(x, mean, standard_deviation):
@@ -18,7 +18,7 @@ def t_student_function(degrees_of_freedom):
                              1 + x ** 2 / degrees_of_freedom) ** (-(degrees_of_freedom + 1) / 2)
 
 
-def t_student(x, degrees_of_freedom):
+def t_student_distribution(x, degrees_of_freedom):
     """
     Calculates Percentile, Probability between two values and Probability density function
 
@@ -45,4 +45,4 @@ def t_student(x, degrees_of_freedom):
 
 
 # Example
-print(t_student(1, 2))
+print(t_student_distribution(1, 2))
