@@ -1,6 +1,7 @@
 # Stanisław Zakrzewski 30/01/2022 - t-test paired and unpaired tests
 
 import math
+from scipy.stats import t
 
 
 def paired_t_test(x_mean, standard_deviation, degrees_of_freedom):
@@ -19,9 +20,12 @@ def paired_t_test(x_mean, standard_deviation, degrees_of_freedom):
 
     Returns
     -------
-        Calculated value of paired t-test
+        t_score: Calculated value of paired t-test
+        p_value: Probability value for hypothesis.
     """
-    return x_mean / standard_deviation * math.sqrt(degrees_of_freedom)
+    t_score = x_mean / standard_deviation * math.sqrt(degrees_of_freedom)
+    p_value = 2*(t.cdf(-abs(t_score), degrees_of_freedom))
+    return t_score, p_value
 
 
 def unpaired_t_test(x1_mean, x2_mean, x1_standard_deviation, x2_standard_deviation, x1_degrees_of_freedom,
@@ -46,12 +50,15 @@ def unpaired_t_test(x1_mean, x2_mean, x1_standard_deviation, x2_standard_deviati
 
     Returns
     -------
-        Calculated value of paired t-test
+        t_score: Calculated value of paired t-test
+        p_value: Probability value for hypothesis.
     """
-    return (x1_mean - x2_mean) / math.sqrt(
+    t_score = (x1_mean - x2_mean) / math.sqrt(
         x1_standard_deviation ** 2 / x1_degrees_of_freedom + x2_standard_deviation ** 2 / x2_degrees_of_freedom)
+    p_value = 2 * (t.cdf(-abs(t_score), [x1_degrees_of_freedom, x2_degrees_of_freedom]))
+    return t_score, p_value
 
 
 # Example
-# print(paired_t_test(-4, 1.78, 6))
-# print(unpaired_t_test(77, 81, 13.14, 11.71, 6, 6))
+print(paired_t_test(-4, 1.78, 6))
+print(unpaired_t_test(77, 81, 13.14, 11.71, 6, 6))
