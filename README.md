@@ -81,7 +81,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
     - T-Student distribution calculator
 
-    - X^2 distribution calculator
+    - X^2 distribution calculator (Lukasz Pierscieniewski)
 
 
 
@@ -89,7 +89,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
     - test for expected value (Bartłomiej Jabłoński - Maybe I will also cover the below tests if the selected topic is too trivial.)
 
-    - minimal sample count (Lukasz Pierscieniewski)
+    - minimal sample count
 
     - ???
 
