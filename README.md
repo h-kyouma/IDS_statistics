@@ -89,15 +89,15 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
     - test for expected value (Bartłomiej Jabłoński - Maybe I will also cover the below tests if the selected topic is too trivial.)
 
-    - minimal sample count
+    - minimal sample count (Lukasz Pierscieniewski)
 
     - ???
 
-    - Pearson X^2 test
+    - Pearson X^2 test (Lukasz Pierscieniewski)
 
-    - Shapiro wilk test
+    - Shapiro wilk test (Lukasz Pierscieniewski)
 
-    - Wald Wolfowits test
+    - Wald Wolfowits test (Lukasz Pierscieniewski)
 
 
 
