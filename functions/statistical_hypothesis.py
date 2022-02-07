@@ -21,7 +21,7 @@ import pandas as pd  # Parse CSV files
 # Statistics
 # ---------------------------------------------------------------------------
 
-import scipy.stats as stats  # Z critical value, probability density function
+import scipy.stats as stats  # Z critical value
 
 
 class NormalDistribution:
@@ -33,13 +33,19 @@ class NormalDistribution:
 
     @staticmethod
     def ppf(alpha):
+        """
+        Percent point function.
+        """
         # Am I allowed to use this function?
         return stats.norm.ppf(alpha)
 
     @staticmethod
-    def pdf(alpha):
-        # Am I allowed to use this function?
-        return stats.norm.pdf(alpha)
+    def pdf(x, mean=0, std=1):
+        """
+        Probability density function.
+        """
+        variance = std ** 2
+        return math.exp(-(x - mean) ** 2 / (2 * variance)) / math.sqrt(2 * math.pi * variance)
 
 
 class StudentsTDistribution:
@@ -53,9 +59,11 @@ class StudentsTDistribution:
         # Am I allowed to use this function?
         return stats.t.ppf(alpha, self.df)
 
-    def pdf(self, alpha):
-        # Am I allowed to use this function?
-        return stats.t.pdf(alpha, self.df)
+    def pdf(self, x):
+        """
+        Probability density function.
+        """
+        return math.gamma((self.df + 1) / 2) / (math.sqrt(math.pi * self.df) * math.gamma(self.df / 2) * (1 + x**2 / self.df)**((self.df + 1) / 2))
 
 
 class TailTest(enum.Enum):
@@ -494,9 +502,9 @@ class DistributionPlot(pg.PlotWidget):
             # np.linspace
             return list(itertools.islice(itertools.count(start, step), int(abs(end - start) / step) + 1)) + [end]
 
-        x = linspace(start, end, step)
-        y = distribution.pdf(x)
-        return x, y
+        X = linspace(start, end, step)
+        y = [distribution.pdf(x) for x in X]
+        return X, y
 
 
 class SolutionDescription(QtWidgets.QGroupBox):
@@ -628,16 +636,6 @@ class ResultPanel(QtWidgets.QGroupBox):
     def __build_solution_description(self):
         self.solution = SolutionDescription()
         return self.solution
-
-    @staticmethod
-    def generate_range(start, end, step):
-        def linspace(start, end, step):
-            # np.linspace
-            return list(itertools.islice(itertools.count(start, step), int(abs(end - start) / step) + 1))
-
-        x = linspace(start, end, step)
-        y = NormalDistribution.pdf(x)
-        return x, y
 
 
 class Controller:
