@@ -113,6 +113,13 @@ def confidence_interval(test, z_alpha, mean, std, n):
     return result
 
 
+def minimal_sample_count(z_alpha, margin, std):
+    assert(std >= 0)
+    assert(margin != 0)
+
+    return (z_alpha * std / margin) ** 2
+
+
 def sample_parameters(sample):
     """
     Returns number of elements, mean and standard deviation of a sample.
@@ -636,7 +643,7 @@ class ResultPanel(QtWidgets.QGroupBox):
             test, z_alpha, sample_model.mean, sample_model.std, sample_model.n)
 
         self.plot.update(z, N, z_alpha, test in (
-            TailTest.LEFT, TailTest.TWO), test in (TailTest.RIGHT, TailTest.TWO),)
+            TailTest.LEFT, TailTest.TWO), test in (TailTest.RIGHT, TailTest.TWO))
         self.solution.update(
             self.DISTRIBUTION_SYMBOL[distribution], test, z, z_alpha, interval, result)
 
@@ -743,6 +750,12 @@ if __name__ == '__main__':
         0.0002, NormalDistribution(1000, 400), 1005, 196) == False)
     assert(check_mean_lesser(0.01, NormalDistribution(1000, 400),
            1005, 196) == False)  # Inverse of the first case
+
+    assert(all([math.isclose(actual, expected, abs_tol=2e-2) for actual, expected in zip(confidence_interval(
+        TailTest.TWO, TailTest.TWO.z_alpha(NormalDistribution, 0.01), 1005, 20, 196), (1001.31, 1008.69))]))
+
+    assert(math.isclose(minimal_sample_count(TailTest.TWO.z_alpha(
+        NormalDistribution, 0.05), 0.45, 2.3), 100.4, abs_tol=2e-1))
 
     # Start GUI
     application = Controller()
