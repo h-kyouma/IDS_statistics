@@ -98,6 +98,21 @@ def margin_of_error(z_alpha, std, n):
     return z_alpha * std / math.sqrt(n)
 
 
+def confidence_interval(test, z_alpha, mean, std, n):
+    """
+    Returns an interval, which with a high, a priori assumed, probability contains the value of the
+    estimated parameter Q, i.e. 𝑃(𝑢 < 𝑄 < 𝑣) = 1 − α
+    """
+    offset = margin_of_error(z_alpha, std, n)
+    result = (mean - offset, mean + offset)
+    if test == TailTest.LEFT:
+        return (-math.inf, result[0])
+    if test == TailTest.RIGHT:
+        return (result[0], math.inf)
+
+    return result
+
+
 def sample_parameters(sample):
     """
     Returns number of elements, mean and standard deviation of a sample.
@@ -617,12 +632,8 @@ class ResultPanel(QtWidgets.QGroupBox):
         z_alpha = test.z_alpha(N, calculation_model.alpha)
         result = test(N, calculation_model.alpha, z)
 
-        margin = margin_of_error(z_alpha, sample_model.std, sample_model.n)
-        interval = [sample_model.mean - margin, sample_model.mean + margin]
-        if test == TailTest.LEFT:
-            interval = (-math.inf, interval[0])
-        if test == TailTest.RIGHT:
-            interval = (interval[0], math.inf)
+        interval = confidence_interval(
+            test, z_alpha, sample_model.mean, sample_model.std, sample_model.n)
 
         self.plot.update(z, N, z_alpha, test in (
             TailTest.LEFT, TailTest.TWO), test in (TailTest.RIGHT, TailTest.TWO),)
