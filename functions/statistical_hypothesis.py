@@ -4,7 +4,7 @@
 # Created By  : Bartłomiej Jabłoński
 # Created Date: 27/01/2022
 # ---------------------------------------------------------------------------
-""" Module for statistical hypothesis testing """
+""" Module for statistical hypothesis testing with Z-test"""
 # ---------------------------------------------------------------------------
 
 
@@ -21,7 +21,7 @@ import pandas as pd  # Parse CSV files
 # Statistics
 # ---------------------------------------------------------------------------
 
-import scipy.stats as stats  # Z critical value
+import scipy.stats as stats  # Z-critical value
 
 
 class NormalDistribution:
@@ -63,7 +63,7 @@ class StudentsTDistribution:
         """
         Probability density function.
         """
-        return math.gamma((self.df + 1) / 2) / (math.sqrt(math.pi * self.df) * math.gamma(self.df / 2) * (1 + x**2 / self.df)**((self.df + 1) / 2))
+        return math.gamma((self.df + 1) / 2) / (math.sqrt(math.pi * self.df) * math.gamma(self.df / 2) * (1 + x ** 2 / self.df) ** ((self.df + 1) / 2))
 
 
 class TailTest(enum.Enum):
@@ -78,6 +78,9 @@ class TailTest(enum.Enum):
                  lambda alpha: 1 - alpha / 2)
 
     def z_alpha(self, distribution, alpha):
+        """
+        Z-critical value.
+        """
         return distribution.ppf(self.value.z_alpha_arg(alpha))
 
     def __call__(self, distribution, alpha, z):
@@ -85,7 +88,10 @@ class TailTest(enum.Enum):
 
 
 def z_value(N, mean, n):
-    assert(N.std >= 0)
+    """
+    Transform to standard normal distribution.
+    """
+    assert(N.std > 0)
     assert(n > 0)
 
     return (mean - N.mean) * math.sqrt(n) / N.std
@@ -124,11 +130,13 @@ def sample_parameters(sample):
     """
     Returns number of elements, mean and standard deviation of a sample.
     """
+    assert(sample)
+
     n = len(sample)
     mean = sum(sample) / n
     std = math.sqrt(sum([(x - mean) ** 2 for x in sample])) / n
 
-    return(n, mean, std)
+    return n, mean, std
 
 
 def check_mean_greater(alpha, N, mean, n):
@@ -194,9 +202,11 @@ class SampleModel:
 
 class CalculationModel:
 
-    def __init__(self, alpha, distribution):
+    def __init__(self, alpha, distribution, margin, include_sample_count):
         self.alpha = alpha
         self.distribution = distribution
+        self.margin = margin
+        self.include_sample_count = include_sample_count
 
 # ---------------------------------------------------------------------------
 # Graphical User Interface
@@ -204,6 +214,8 @@ class CalculationModel:
 
 
 NUMBER_LIMIT = 9999999
+
+pg.setConfigOptions(antialias=True)
 
 
 class HypothesisWidget(QtWidgets.QWidget):
@@ -256,6 +268,9 @@ class HypothesisWidget(QtWidgets.QWidget):
     def get_model(self):
         return HypothesisModel(self.TESTS[self.operator.currentIndex()], self.value.value())
 
+    def activate_minimal_sample_count_configuration(self, activate):
+        self.value.setDisabled(activate)
+
 
 class SampleParameters(QtWidgets.QWidget):
 
@@ -268,7 +283,7 @@ class SampleParameters(QtWidgets.QWidget):
         super().__init__(*args, **kwargs)
 
         self.n = QtWidgets.QSpinBox()
-        self.n.setRange(0, NUMBER_LIMIT)
+        self.n.setRange(1, NUMBER_LIMIT)
         self.n.setValue(196)
 
         self.mean = QtWidgets.QDoubleSpinBox()
@@ -276,7 +291,7 @@ class SampleParameters(QtWidgets.QWidget):
         self.mean.setValue(1005)
 
         self.std = QtWidgets.QDoubleSpinBox()
-        self.std.setRange(0, NUMBER_LIMIT)
+        self.std.setRange(0.01, NUMBER_LIMIT)
         self.std.setValue(20)
 
         layout = QtWidgets.QHBoxLayout()
@@ -327,8 +342,19 @@ class SampleValues(QtWidgets.QWidget):
         self.values.setText(','.join(map(str, sample)))
 
     def get_model(self):
-        sample = list(map(float, self.values.text().rstrip(',').split(',')))
-        return SampleModel(*sample_parameters(sample))
+        n, mean, std = sample_parameters(self.__get_sample())
+        if std == 0:
+            raise ValueError('sample standard deviation is 0')
+
+        return SampleModel(n, mean, std)
+
+    def __get_sample(self):
+        values = tuple(
+            filter(None, self.values.text().strip().rstrip(',').split(',')))
+        if not values:
+            raise ValueError('empty sample')
+
+        return list(map(float, values))
 
 
 class SampleConfiguration(QtWidgets.QGroupBox):
@@ -427,10 +453,18 @@ class SampleConfiguration(QtWidgets.QGroupBox):
     def get_model(self):
         return self.method.get_model()
 
+    def activate_minimal_sample_count_configuration(self, activate):
+        if activate:
+            self.parameters.select()
+
+        self.parameters.widget.n.setDisabled(activate)
+        self.values.setDisabled(activate)
+
 
 class CalculationConfiguration(QtWidgets.QGroupBox):
 
     distributionActivated = QtCore.pyqtSignal(object)
+    minimalSampleCountEnabled = QtCore.pyqtSignal(bool)
 
     def __init__(self, *args, **kwargs):
         super().__init__('Calculation', *args, **kwargs)
@@ -443,6 +477,28 @@ class CalculationConfiguration(QtWidgets.QGroupBox):
 
         label = QtWidgets.QLabel('α =')
         label.setToolTip('Confidence level')
+
+        minimal_sample_count_group = QtWidgets.QGroupBox('Margin of error')
+        minimal_sample_count_group.setToolTip(
+            'Enable to calculate minimal sample count. It determines <i>n</i> that results in μ<sub>0</sub> ± <i>margin of error</i>')
+
+        self.margin_of_error = QtWidgets.QDoubleSpinBox()
+        self.margin_of_error.setValue(1)
+        self.margin_of_error.setSingleStep(0.5)
+        self.margin_of_error.setDecimals(4)
+        self.margin_of_error.setRange(0.0001, NUMBER_LIMIT)
+        self.margin_of_error.setDisabled(True)
+
+        enable_minimal_sample_count = QtWidgets.QCheckBox()
+        enable_minimal_sample_count.stateChanged.connect(
+            self.margin_of_error.setEnabled)
+        enable_minimal_sample_count.stateChanged.connect(
+            lambda state: self.minimalSampleCountEnabled.emit(state))
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(enable_minimal_sample_count)
+        layout.addWidget(self.margin_of_error)
+        minimal_sample_count_group.setLayout(layout)
 
         distribution = QtWidgets.QGroupBox('Distribution')
         self.normal = QtWidgets.QRadioButton('Normal')
@@ -462,6 +518,7 @@ class CalculationConfiguration(QtWidgets.QGroupBox):
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(label)
         layout.addWidget(self.alpha)
+        layout.addWidget(minimal_sample_count_group)
         layout.addWidget(distribution)
 
         self.setLayout(layout)
@@ -472,12 +529,12 @@ class CalculationConfiguration(QtWidgets.QGroupBox):
             self.distributionActivated.emit(distribution)
 
     def get_model(self):
-        return CalculationModel(self.alpha.value(), self.distribution)
+        return CalculationModel(self.alpha.value(), self.distribution, self.margin_of_error.value(), self.margin_of_error.isEnabled())
 
 
 class DistributionPlot(pg.PlotWidget):
 
-    def __init__(self, width=3.5, *args, **kwargs):
+    def __init__(self, width=4, *args, **kwargs):
         super().__init__(*args, **kwargs)
         assert(width > 0)
         self.width = width
@@ -494,7 +551,7 @@ class DistributionPlot(pg.PlotWidget):
     def update(self, z, distribution, z_alpha, left, right):
         self.clear()
 
-        ticks = [(0, 0), (z, f'{z:.3f}'), (z_alpha, f'{z_alpha:.3f}')]
+        ticks = [(0, 0), (z_alpha, f'{z_alpha:.3f}')]
 
         area_range = (min(z_alpha, self.width),
                       self.width) if right else (-self.width, max(-self.width, z_alpha))
@@ -504,7 +561,8 @@ class DistributionPlot(pg.PlotWidget):
             self.__draw_critical_value(distribution, -z_alpha,
                                        [-i for i in area_range[::-1]])
 
-        self.addLine(x=z, pen=(50, 50, 150), markers=[('^', 0, 10)])
+        self.addLine(x=z, pen=(50, 50, 150), markers=[
+                     ('^', 0, 10)], label=f'{z:.3f}')
 
         self.x_axis.setTicks([ticks])
 
@@ -557,6 +615,7 @@ class SolutionDescription(QtWidgets.QGroupBox):
         self.z_alpha_value = QtWidgets.QLabel('')
         self.conclusion = QtWidgets.QLabel('')
         self.interval = QtWidgets.QLabel('')
+        self.minimal_sample_count = QtWidgets.QLabel('')
 
         layout = QtWidgets.QVBoxLayout()
 
@@ -594,9 +653,18 @@ class SolutionDescription(QtWidgets.QGroupBox):
         h_layout.addWidget(self.interval)
         layout.addLayout(h_layout)
 
+        h_layout = QtWidgets.QHBoxLayout()
+        h_layout.addWidget(QtWidgets.QLabel('Min. sample count:'))
+        h_layout.addStretch()
+        h_layout.addWidget(self.minimal_sample_count)
+        h_layout.setContentsMargins(0, 0, 0, 0)
+        self.minimal_sample_count_widget = QtWidgets.QWidget()
+        self.minimal_sample_count_widget.setLayout(h_layout)
+        layout.addWidget(self.minimal_sample_count_widget)
+
         self.setLayout(layout)
 
-    def update(self, symbol, test, z, z_alpha, interval, result):
+    def update(self, symbol, test, z, z_alpha, interval, result, minimal_sample_count_result):
         self.condition_label_lhs.setText(f'{symbol} =')
         self.condition_label_rhs.setText(f'{symbol}<sub>α</sub> =')
         test_properties = self.TEST_TYPE[test](symbol)
@@ -610,6 +678,11 @@ class SolutionDescription(QtWidgets.QGroupBox):
         self.conclusion.setText(self.CONCLUSION_TYPE[result])
 
         self.interval.setText(f'({interval[0]:.4f} — {interval[1]:.4f})')
+
+        self.minimal_sample_count.setText(
+            f'{minimal_sample_count_result[1]:.3f} ≈ {math.ceil(minimal_sample_count_result[1])}')
+        self.minimal_sample_count_widget.setVisible(
+            minimal_sample_count_result[0])
 
 
 class ResultPanel(QtWidgets.QGroupBox):
@@ -642,10 +715,13 @@ class ResultPanel(QtWidgets.QGroupBox):
         interval = confidence_interval(
             test, z_alpha, sample_model.mean, sample_model.std, sample_model.n)
 
+        minimal_sample_count_value = minimal_sample_count(
+            z_alpha, calculation_model.margin, sample_model.std)
+
         self.plot.update(z, N, z_alpha, test in (
             TailTest.LEFT, TailTest.TWO), test in (TailTest.RIGHT, TailTest.TWO))
         self.solution.update(
-            self.DISTRIBUTION_SYMBOL[distribution], test, z, z_alpha, interval, result)
+            self.DISTRIBUTION_SYMBOL[distribution], test, z, z_alpha, interval, result, (calculation_model.include_sample_count, minimal_sample_count_value))
 
     def __build_normal_plot(self):
         self.plot = DistributionPlot()
@@ -690,17 +766,23 @@ class Controller:
         self.calculation_configuration.distributionActivated.connect(
             self.sample_configuration.apply_distribution)
 
+        self.calculation_configuration.minimalSampleCountEnabled.connect(
+            self.__activate_minimal_sample_count_configuration)
+
     def show(self):
         self.window.show()
         self.app.exec()
 
     def calculate(self):
+        try:
+            self.result_panel.update(self.H0.get_model(),
+                                     self.sample_configuration.get_model(),
+                                     self.calculation_configuration.get_model())
 
-        self.result_panel.update(self.H0.get_model(),
-                                 self.sample_configuration.get_model(),
-                                 self.calculation_configuration.get_model())
-
-        self.result_panel.show()
+            self.result_panel.show()
+        except ValueError as e:
+            QtWidgets.QMessageBox.critical(
+                self.window, 'Error', f'Invalid configuration: {str(e)}')
 
     def __create_hypotheses(self):
         self.H0 = HypothesisWidget(
@@ -735,13 +817,21 @@ class Controller:
         self.result_panel.setHidden(True)
         return self.result_panel
 
+    def __activate_minimal_sample_count_configuration(self, activate):
+        self.H0.activate_minimal_sample_count_configuration(activate)
+        self.H1.activate_minimal_sample_count_configuration(activate)
+        self.sample_configuration.activate_minimal_sample_count_configuration(
+            activate)
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
-    # Lecture example with dust emission
+    # Lecture examples with dust emission
+
+    # Z-test
     assert(check_mean_greater(
         0.01, NormalDistribution(1000, 400), 1005, 196) == True)
     assert(check_mean_different(
@@ -751,9 +841,11 @@ if __name__ == '__main__':
     assert(check_mean_lesser(0.01, NormalDistribution(1000, 400),
            1005, 196) == False)  # Inverse of the first case
 
+    # Confidence interval
     assert(all([math.isclose(actual, expected, abs_tol=2e-2) for actual, expected in zip(confidence_interval(
         TailTest.TWO, TailTest.TWO.z_alpha(NormalDistribution, 0.01), 1005, 20, 196), (1001.31, 1008.69))]))
 
+    # Minimal sample count
     assert(math.isclose(minimal_sample_count(TailTest.TWO.z_alpha(
         NormalDistribution, 0.05), 0.45, 2.3), 100.4, abs_tol=2e-1))
 
