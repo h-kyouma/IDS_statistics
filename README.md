@@ -81,7 +81,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
     - T-Student distribution calculator
 
-    - X^2 distribution calculator
+    - X^2 distribution calculator (Lukasz Pierscieniewski)
 
 
 
@@ -89,11 +89,11 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
     - test for expected value (Bartłomiej Jabłoński, it additionaly includes confidence interval for average, minimal sample count, normal and student's t distribution)
 
-    - Pearson X^2 test
+    - Pearson X^2 test (Lukasz Pierscieniewski)
 
-    - Shapiro wilk test
+    - Shapiro wilk test (Lukasz Pierscieniewski)
 
-    - Wald Wolfowits test
+    - Wald Wolfowits test (Lukasz Pierscieniewski)
 
 
 
