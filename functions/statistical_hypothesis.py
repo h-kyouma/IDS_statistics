@@ -25,11 +25,10 @@ import scipy.stats as stats  # Z-critical value
 
 
 class NormalDistribution:
-    def __init__(self, mean, var, n=-1):
+    def __init__(self, mean, var):
         self.mean = mean
         self.var = var
         self.std = math.sqrt(var)
-        self.n = n
 
     @staticmethod
     def ppf(alpha):
@@ -47,6 +46,14 @@ class NormalDistribution:
         variance = std ** 2
         return math.exp(-(x - mean) ** 2 / (2 * variance)) / math.sqrt(2 * math.pi * variance)
 
+    @staticmethod
+    def symbol():
+        return 'z'
+
+    @staticmethod
+    def scale_symbol():
+        return 'σ'
+
 
 class StudentsTDistribution:
     def __init__(self, mean, var, n):
@@ -55,36 +62,74 @@ class StudentsTDistribution:
         self.std = math.sqrt(var)
         self.df = n - 1
 
-    def ppf(self, alpha):
-        # Am I allowed to use this function?
-        return stats.t.ppf(alpha, self.df)
+        self.ppf = self.__instance_ppf
+        self.pdf = self.__instance_pdf
 
-    def pdf(self, x):
+    @staticmethod
+    def ppf(alpha, df):
+        """
+        Percent point function.
+        """
+        # Am I allowed to use this function?
+        return stats.t.ppf(alpha, df)
+
+    @staticmethod
+    def pdf(x, df):
         """
         Probability density function.
         """
-        return math.gamma((self.df + 1) / 2) / (math.sqrt(math.pi * self.df) * math.gamma(self.df / 2) * (1 + x ** 2 / self.df) ** ((self.df + 1) / 2))
+        return math.gamma((df + 1) / 2) / (math.sqrt(math.pi * df) * math.gamma(df / 2) * (1 + x ** 2 / df) ** ((df + 1) / 2))
+
+    @staticmethod
+    def symbol():
+        return 't'
+
+    @staticmethod
+    def scale_symbol():
+        return 's'
+
+    def __instance_ppf(self, alpha):
+        return StudentsTDistribution.ppf(alpha, self.df)
+
+    def __instance_pdf(self, x):
+        return StudentsTDistribution.pdf(x, self.df)
 
 
 class TailTest(enum.Enum):
     class __Test():
-        def __init__(self, condition, z_alpha_arg):
-            self.z_alpha_arg = lambda alpha: z_alpha_arg(alpha)
+        def __init__(self, condition, get_alpha, name, rule):
+            self.get_alpha = lambda alpha: get_alpha(alpha)
             self.condition = lambda z, z_alpha: condition(z, z_alpha)
+            self.name = name
+            self.rule = rule
 
-    LEFT = __Test(operator.lt, lambda alpha: alpha)
-    RIGHT = __Test(operator.gt, lambda alpha: 1 - alpha)
+    LEFT = __Test(operator.lt,
+                  lambda alpha: alpha,
+                  'left tailed',
+                  lambda symbol: f'{symbol} &#60; {symbol}<sub>α</sub>')
+    RIGHT = __Test(operator.gt,
+                   lambda alpha: 1 - alpha,
+                   'right tailed',
+                   lambda symbol: f'{symbol} &#62; {symbol}<sub>α</sub>')
     TWO = __Test(lambda z, z_alpha: abs(z) > z_alpha,
-                 lambda alpha: 1 - alpha / 2)
+                 lambda alpha: 1 - alpha / 2,
+                 'two tailed',
+                 lambda symbol: f'|{symbol}| &#62; {symbol}<sub>α</sub>')
 
     def z_alpha(self, distribution, alpha):
         """
         Z-critical value.
         """
-        return distribution.ppf(self.value.z_alpha_arg(alpha))
+        return distribution.ppf(self.value.get_alpha(alpha))
 
     def __call__(self, distribution, alpha, z):
         return self.value.condition(z, self.z_alpha(distribution, alpha))
+
+    def name(self):
+        return self.value.name
+
+    def rule(self, symbol):
+        return self.value.rule(symbol)
 
 
 def z_value(N, mean, n):
@@ -202,11 +247,46 @@ class SampleModel:
 
 class CalculationModel:
 
-    def __init__(self, alpha, distribution, margin, include_sample_count):
+    def __init__(self, alpha, distribution_factory, margin, include_sample_count):
         self.alpha = alpha
-        self.distribution = distribution
+        self.distribution_factory = distribution_factory
         self.margin = margin
         self.include_sample_count = include_sample_count
+
+
+class Calculator:
+
+    def __init__(self, hypothesis_model, sample_model, calculation_model):
+        self.hypothesis_mean = hypothesis_model.mean
+        self.hypothesis_test = hypothesis_model.test
+
+        self.is_left_test = self.hypothesis_test in (
+            TailTest.LEFT, TailTest.TWO)
+        self.is_right_test = self.hypothesis_test in (
+            TailTest.RIGHT, TailTest.TWO)
+
+        self.sample_mean = sample_model.mean
+        self.sample_std = sample_model.std
+        self.sample_n = sample_model.n
+
+        self.confidence_level = calculation_model.alpha
+
+        self.N = calculation_model.distribution_factory(
+            self.hypothesis_mean, self.sample_std ** 2, self.sample_n)
+        self.z = z_value(self.N, self.sample_mean, self.sample_n)
+        self.z_alpha = self.hypothesis_test.z_alpha(
+            self.N, self.confidence_level)
+
+        self.rejected = self.hypothesis_test(
+            self.N, self.confidence_level, self.z)
+
+        self.confidence_interval = confidence_interval(
+            self.hypothesis_test, self.z_alpha, self.sample_mean, self.sample_std, self.sample_n)
+
+        self.margin_of_error = calculation_model.margin
+        self.include_sample_count = calculation_model.include_sample_count
+        self.minimal_sample_count = minimal_sample_count(
+            self.z_alpha, self.margin_of_error, self.sample_std)
 
 # ---------------------------------------------------------------------------
 # Graphical User Interface
@@ -238,7 +318,7 @@ class HypothesisWidget(QtWidgets.QWidget):
 
         self.operator = QtWidgets.QComboBox()
         self.operator.addItems(operators)
-        self.operator.setCurrentIndex(2)
+        self.operator.setCurrentIndex(0)
         self.operator.setMinimumWidth(40)
         self.operator.currentIndexChanged.connect(
             lambda index: self.operatorChanged.emit(index))
@@ -273,11 +353,6 @@ class HypothesisWidget(QtWidgets.QWidget):
 
 
 class SampleParameters(QtWidgets.QWidget):
-
-    STD_SYMBOL = {
-        NormalDistribution: 'σ',
-        StudentsTDistribution: 's'
-    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -316,7 +391,7 @@ class SampleParameters(QtWidgets.QWidget):
         self.std.setValue(std)
 
     def apply_distribution(self, distribution):
-        self.std_label.setText(f'{self.STD_SYMBOL[distribution]} =')
+        self.std_label.setText(f'{distribution.scale_symbol()} =')
 
     def get_model(self):
         return SampleModel(self.n.value(), self.mean.value(), self.std.value())
@@ -503,12 +578,12 @@ class CalculationConfiguration(QtWidgets.QGroupBox):
         distribution = QtWidgets.QGroupBox('Distribution')
         self.normal = QtWidgets.QRadioButton('Normal')
         self.normal.toggled.connect(
-            lambda value: self.activated(value, NormalDistribution))
+            lambda value: self.activated(value, (NormalDistribution, lambda mean, var, _: NormalDistribution(mean, var))))
         self.normal.setChecked(True)
 
         self.students_t = QtWidgets.QRadioButton("Student's t")
         self.students_t.toggled.connect(
-            lambda value: self.activated(value, StudentsTDistribution))
+            lambda value: self.activated(value, (StudentsTDistribution, lambda mean, var, n: StudentsTDistribution(mean, var, n))))
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.normal)
@@ -524,27 +599,33 @@ class CalculationConfiguration(QtWidgets.QGroupBox):
         self.setLayout(layout)
 
     def activated(self, value, distribution):
+        distribution_class, distribution_factory = distribution
         if value:
-            self.distribution = distribution
-            self.distributionActivated.emit(distribution)
+            self.distribution_factory = distribution_factory
+            self.distributionActivated.emit(distribution_class)
 
     def get_model(self):
-        return CalculationModel(self.alpha.value(), self.distribution, self.margin_of_error.value(), self.margin_of_error.isEnabled())
+        return CalculationModel(self.alpha.value(),
+                                self.distribution_factory,
+                                self.margin_of_error.value(),
+                                self.margin_of_error.isEnabled())
 
 
 class DistributionPlot(pg.PlotWidget):
 
     def __init__(self, width=4, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         assert(width > 0)
         self.width = width
 
-        self.hideButtons()
         self.setMinimumHeight(300)
+        self.setMouseEnabled(False, False)
+
         self.setRange(xRange=(-self.width, self.width),
                       yRange=(0, .4), padding=0)
-        self.setMouseEnabled(False, False)
         self.getPlotItem().hideAxis('left')
+        self.hideButtons()
 
         self.x_axis = self.getAxis('bottom')
 
@@ -579,7 +660,6 @@ class DistributionPlot(pg.PlotWidget):
     @staticmethod
     def generate_range(distribution, start, end, step):
         def linspace(start, end, step):
-            # np.linspace
             return list(itertools.islice(itertools.count(start, step), int(abs(end - start) / step) + 1)) + [end]
 
         X = linspace(start, end, step)
@@ -589,11 +669,6 @@ class DistributionPlot(pg.PlotWidget):
 
 class SolutionDescription(QtWidgets.QGroupBox):
 
-    class TestProperties():
-        def __init__(self, name, rule):
-            self.name = name
-            self.rule = rule
-
     CONCLUSION_TYPE = {
         True: 'H<sub>0</sub> <strong>rejected</strong><br>Accepted H<sub>1</sub>',
         False: '<strong>Cannot reject</strong> H<sub>0</sub><br>Cannot accept H<sub>1</sub>'
@@ -601,13 +676,6 @@ class SolutionDescription(QtWidgets.QGroupBox):
 
     def __init__(self, *args, **kwargs):
         super().__init__('Solution', *args, **kwargs)
-
-        self.TEST_TYPE = {
-            TailTest.LEFT: lambda symbol: self.TestProperties('left tailed', f'{symbol} &#60; {symbol}<sub>α</sub>'),
-            TailTest.RIGHT: lambda symbol: self.TestProperties('right tailed', f'{symbol} &#62; {symbol}<sub>α</sub>'),
-            TailTest.TWO: lambda symbol: self.TestProperties(
-                'two tailed', f'|{symbol}| &#62; {symbol}<sub>α</sub>')
-        }
 
         self.test_type = QtWidgets.QLabel('')
         self.rule_type = QtWidgets.QLabel('')
@@ -667,10 +735,9 @@ class SolutionDescription(QtWidgets.QGroupBox):
     def update(self, symbol, test, z, z_alpha, interval, result, minimal_sample_count_result):
         self.condition_label_lhs.setText(f'{symbol} =')
         self.condition_label_rhs.setText(f'{symbol}<sub>α</sub> =')
-        test_properties = self.TEST_TYPE[test](symbol)
 
-        self.test_type.setText(test_properties.name)
-        self.rule_type.setText(test_properties.rule)
+        self.test_type.setText(test.name())
+        self.rule_type.setText(test.rule(symbol))
 
         self.z_value.setText(f'{z:.3f}')
         self.z_alpha_value.setText(f'{z_alpha:.3f}')
@@ -687,11 +754,6 @@ class SolutionDescription(QtWidgets.QGroupBox):
 
 class ResultPanel(QtWidgets.QGroupBox):
 
-    DISTRIBUTION_SYMBOL = {
-        NormalDistribution: 'z',
-        StudentsTDistribution: 't'
-    }
-
     def __init__(self, *args, **kwargs):
         super().__init__('Result', *args, **kwargs)
 
@@ -702,26 +764,11 @@ class ResultPanel(QtWidgets.QGroupBox):
 
         self.setLayout(layout)
 
-    def update(self, hypothesis_model, sample_model, calculation_model):
-        distribution = calculation_model.distribution
-        N = distribution(hypothesis_model.mean,
-                         sample_model.std ** 2, sample_model.n)
-        test = hypothesis_model.test
-
-        z = z_value(N, sample_model.mean, sample_model.n)
-        z_alpha = test.z_alpha(N, calculation_model.alpha)
-        result = test(N, calculation_model.alpha, z)
-
-        interval = confidence_interval(
-            test, z_alpha, sample_model.mean, sample_model.std, sample_model.n)
-
-        minimal_sample_count_value = minimal_sample_count(
-            z_alpha, calculation_model.margin, sample_model.std)
-
-        self.plot.update(z, N, z_alpha, test in (
-            TailTest.LEFT, TailTest.TWO), test in (TailTest.RIGHT, TailTest.TWO))
-        self.solution.update(
-            self.DISTRIBUTION_SYMBOL[distribution], test, z, z_alpha, interval, result, (calculation_model.include_sample_count, minimal_sample_count_value))
+    def update(self, calculator):
+        self.plot.update(calculator.z, calculator.N, calculator.z_alpha,
+                         calculator.is_left_test, calculator.is_right_test)
+        self.solution.update(calculator.N.symbol(), calculator.hypothesis_test, calculator.z, calculator.z_alpha,
+                             calculator.confidence_interval, calculator.rejected, (calculator.include_sample_count, calculator.minimal_sample_count))
 
     def __build_normal_plot(self):
         self.plot = DistributionPlot()
@@ -775,9 +822,10 @@ class Controller:
 
     def calculate(self):
         try:
-            self.result_panel.update(self.H0.get_model(),
-                                     self.sample_configuration.get_model(),
-                                     self.calculation_configuration.get_model())
+            self.result_panel.update(Calculator(
+                self.H0.get_model(),
+                self.sample_configuration.get_model(),
+                self.calculation_configuration.get_model()))
 
             self.result_panel.show()
         except ValueError as e:
