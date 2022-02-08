@@ -77,7 +77,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
     - https://www.statskingdom.com/distribution-calculator.html
 
-    - Normal distribution calculator ([Konrad Clapa] I will take this as declared on TEAMS)
+    - Normal distribution calculator 
 
     - T-Student distribution calculator
 
