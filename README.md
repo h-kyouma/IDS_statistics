@@ -3,7 +3,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
 <b>TODO</b>
 
-- Cumulative distribution function:
+- Cumulative distribution function (Konrad Clapa:
 
     - https://www.danielsoper.com/statcalc/calculator.aspx?id=53 (sth like that, but not only for normal distribution)
 
