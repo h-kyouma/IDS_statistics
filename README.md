@@ -87,7 +87,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
 - Testing of statistical hypotheses:
 
-    - test for expected value (Bartłomiej Jabłoński, it additionaly includes confidence interval for average, minimal sample count, normal and student's t distribution)
+    - test for expected value (Bartłomiej Jabłoński, it additionaly includes confidence interval for average and probability, minimal sample count, normal and student's t distributions)
 
     - Pearson X^2 test (Lukasz Pierscieniewski)
 
@@ -95,7 +95,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
     - Wald Wolfowits test (Lukasz Pierscieniewski)
 
-
+- Central limit theorem
 
 - Relationship betwen data
 

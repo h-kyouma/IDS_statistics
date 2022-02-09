@@ -4,7 +4,7 @@
 # Created By  : Bartłomiej Jabłoński
 # Created Date: 27/01/2022
 # ---------------------------------------------------------------------------
-""" Module for statistical hypothesis testing with Z-test"""
+""" Module for statistical hypothesis testing with Z-test and T-test"""
 # ---------------------------------------------------------------------------
 
 
@@ -25,7 +25,7 @@ import scipy.stats as stats  # Z-critical value
 
 
 class NormalDistribution:
-    def __init__(self, mean, var):
+    def __init__(self, mean=0, var=1):
         self.mean = mean
         self.var = var
         self.std = math.sqrt(var)
@@ -34,6 +34,9 @@ class NormalDistribution:
     def ppf(alpha):
         """
         Percent point function.
+
+        :param float alpha: lower probability tail.
+        :param int df: degrees of freedom.
         """
         # Am I allowed to use this function?
         return stats.norm.ppf(alpha)
@@ -56,11 +59,11 @@ class NormalDistribution:
 
 
 class StudentsTDistribution:
-    def __init__(self, mean, var, n):
+    def __init__(self, n, mean=0, var=1):
+        self.df = n - 1
         self.mean = mean
         self.var = var
         self.std = math.sqrt(var)
-        self.df = n - 1
 
         self.ppf = self.__instance_ppf
         self.pdf = self.__instance_pdf
@@ -69,6 +72,9 @@ class StudentsTDistribution:
     def ppf(alpha, df):
         """
         Percent point function.
+
+        :param float alpha: lower probability tail.
+        :param int df: degrees of freedom.
         """
         # Am I allowed to use this function?
         return stats.t.ppf(alpha, df)
@@ -149,13 +155,42 @@ def margin_of_error(z_alpha, std, n):
     return z_alpha * std / math.sqrt(n)
 
 
-def confidence_interval(test, z_alpha, mean, std, n):
+def confidence_interval_for_average(test, z_alpha, mean, std, n):
     """
-    Returns an interval, which with a high, a priori assumed, probability contains the value of the
-    estimated parameter Q, i.e. 𝑃(𝑢 < 𝑄 < 𝑣) = 1 − α
+    Returns an interval, which with a high, a priori assumed, probability 
+    contains the value of the estimated parameter Q, i.e. 𝑃(𝑢 < 𝑄 < 𝑣) = 1 − α
     """
     offset = margin_of_error(z_alpha, std, n)
     result = (mean - offset, mean + offset)
+
+    if test == TailTest.LEFT:
+        return (-math.inf, result[0])
+    if test == TailTest.RIGHT:
+        return (result[0], math.inf)
+
+    return result
+
+
+def probability_from_ratio(m, n):
+    assert(m > 0)
+    assert(n > 0)
+    assert(n >= m)
+
+    return m / n
+
+
+def confidence_interval_for_probability(test, z_alpha, m, n):
+    """
+    Confidence interval for probability of randomly seleceted element in
+    population exhibiting some feature.
+
+    :param int m: number of units in sample exhibiting feature.
+    :param int n: sample size.
+    """
+    r = probability_from_ratio(m, n)
+    offset = z_alpha * math.sqrt((r * (1 - r)) / n)
+    result = ((r - offset), (r + offset))
+
     if test == TailTest.LEFT:
         return (-math.inf, result[0])
     if test == TailTest.RIGHT:
@@ -191,6 +226,7 @@ def check_mean_greater(alpha, N, mean, n):
     where m_0 = N.mean
 
     Returns True if H0 is rejected in favor of H1, and False if cannot reject H0.
+    :param object N: distribution.
     """
     assert(0 < alpha < 1.0)  # significance level
     assert(n > 0)  # sample size
@@ -205,6 +241,7 @@ def check_mean_lesser(alpha, N, mean, n):
     where m_0 = N.mean
 
     Returns True if H0 is rejected in favor of H1, and False if cannot reject H0.
+    :param object N: distribution.
     """
     assert(0 < alpha < 1.0)  # significance level
     assert(n > 0)  # sample size
@@ -219,6 +256,7 @@ def check_mean_different(alpha, N, mean, n):
     where m_0 = N.mean
 
     Returns True if H0 is rejected in favor of H1, and False if cannot reject H0.
+    :param object N: distribution.
     """
     assert(0 < alpha < 1.0)  # significance level
     assert(n > 0)  # sample size
@@ -247,11 +285,16 @@ class SampleModel:
 
 class CalculationModel:
 
-    def __init__(self, alpha, distribution_factory, margin, include_sample_count):
+    def __init__(self, alpha, distribution_factory, margin, include_sample_count,
+                 feature_sample_size, include_interval_for_probability):
         self.alpha = alpha
         self.distribution_factory = distribution_factory
+
         self.margin = margin
         self.include_sample_count = include_sample_count
+
+        self.feature_sample_size = feature_sample_size
+        self.include_interval_for_probability = include_interval_for_probability
 
 
 class Calculator:
@@ -280,13 +323,20 @@ class Calculator:
         self.rejected = self.hypothesis_test(
             self.N, self.confidence_level, self.z)
 
-        self.confidence_interval = confidence_interval(
+        self.confidence_interval_for_average = confidence_interval_for_average(
             self.hypothesis_test, self.z_alpha, self.sample_mean, self.sample_std, self.sample_n)
 
         self.margin_of_error = calculation_model.margin
         self.include_sample_count = calculation_model.include_sample_count
         self.minimal_sample_count = minimal_sample_count(
             self.z_alpha, self.margin_of_error, self.sample_std)
+
+        self.feature_sample_size = calculation_model.feature_sample_size
+        self.include_interval_for_probability = calculation_model.include_interval_for_probability
+        self.interval_for_probability = confidence_interval_for_probability(
+            self.hypothesis_test, self.z_alpha, self.feature_sample_size, self.sample_n)
+        self.probability = probability_from_ratio(
+            self.feature_sample_size, self.sample_n)
 
 # ---------------------------------------------------------------------------
 # Graphical User Interface
@@ -331,19 +381,12 @@ class HypothesisWidget(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-    def update_value(self, mean):
-        self.blockSignals(True)
-        self.value.setValue(mean)
-        self.blockSignals(False)
-
-    def update_operator(self, operator_index):
-        self.blockSignals(True)
-        self.operator.setCurrentIndex(operator_index)
-        self.blockSignals(False)
+    def set_test(self, test):
+        self.operator.setCurrentIndex(self.TESTS.index(test))
 
     def connect_to(self, other_hypothesis):
-        self.valueChanged.connect(other_hypothesis.update_value)
-        self.operatorChanged.connect(other_hypothesis.update_operator)
+        self.valueChanged.connect(other_hypothesis.__update_value)
+        self.operatorChanged.connect(other_hypothesis.__update_operator)
 
     def get_model(self):
         return HypothesisModel(self.TESTS[self.operator.currentIndex()], self.value.value())
@@ -351,8 +394,20 @@ class HypothesisWidget(QtWidgets.QWidget):
     def activate_minimal_sample_count_configuration(self, activate):
         self.value.setDisabled(activate)
 
+    def __update_value(self, mean):
+        self.blockSignals(True)
+        self.value.setValue(mean)
+        self.blockSignals(False)
+
+    def __update_operator(self, operator_index):
+        self.blockSignals(True)
+        self.operator.setCurrentIndex(operator_index)
+        self.blockSignals(False)
+
 
 class SampleParameters(QtWidgets.QWidget):
+
+    sampleSizeChanged = QtCore.pyqtSignal(int)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -360,6 +415,8 @@ class SampleParameters(QtWidgets.QWidget):
         self.n = QtWidgets.QSpinBox()
         self.n.setRange(1, NUMBER_LIMIT)
         self.n.setValue(196)
+        self.n.valueChanged.connect(
+            lambda value: self.sampleSizeChanged.emit(value))
 
         self.mean = QtWidgets.QDoubleSpinBox()
         self.mean.setRange(-NUMBER_LIMIT, NUMBER_LIMIT)
@@ -374,10 +431,12 @@ class SampleParameters(QtWidgets.QWidget):
         label.setToolTip('Sample size')
         layout.addWidget(label)
         layout.addWidget(self.n)
-        label = QtWidgets.QLabel('μ<sub>0</sub> =')
+
+        label = QtWidgets.QLabel('x̄ =')
         label.setToolTip('Sample mean')
         layout.addWidget(label)
         layout.addWidget(self.mean)
+
         self.std_label = QtWidgets.QLabel('σ =')
         layout.addWidget(self.std_label)
         layout.addWidget(self.std)
@@ -399,12 +458,15 @@ class SampleParameters(QtWidgets.QWidget):
 
 class SampleValues(QtWidgets.QWidget):
 
+    sampleSizeChanged = QtCore.pyqtSignal(int)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.values = QtWidgets.QLineEdit('1.4,2.1,3.7')
         self.values.setValidator(QtGui.QRegExpValidator(
             QtCore.QRegExp(r'^(\s*-?\d+(\.\d+)?)(\s*,\s*-?\d+(\.\d+)?)*$')))
+        self.values.textChanged.connect(self.__values_changed)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(QtWidgets.QLabel('Values = ['))
@@ -423,28 +485,40 @@ class SampleValues(QtWidgets.QWidget):
 
         return SampleModel(n, mean, std)
 
-    def __get_sample(self):
-        values = tuple(
+    def __parse_values(self):
+        return tuple(
             filter(None, self.values.text().strip().rstrip(',').split(',')))
+
+    def __get_sample(self):
+        values = self.__parse_values()
         if not values:
             raise ValueError('empty sample')
 
         return list(map(float, values))
 
+    def __values_changed(self, _):
+        self.sampleSizeChanged.emit(len(self.__parse_values()))
+
 
 class SampleConfiguration(QtWidgets.QGroupBox):
+
+    sampleSizeChanged = QtCore.pyqtSignal(int)
 
     def __init__(self, *args, **kwargs):
         super().__init__('Sample', *args, **kwargs)
 
         self.button_group = QtWidgets.QButtonGroup()
 
-        self.parameters = self.Method(SampleParameters())
+        method = SampleParameters()
+        method.sampleSizeChanged.connect(self.sampleSizeChanged)
+        self.parameters = self.Method(method)
         self.parameters.methodActivated.connect(self.change_method)
         self.parameters.insert_to_group(self.button_group)
         self.parameters.select()
 
-        self.values = self.Method(SampleValues())
+        method = SampleValues()
+        method.sampleSizeChanged.connect(self.sampleSizeChanged)
+        self.values = self.Method(method)
         self.values.methodActivated.connect(self.change_method)
         self.values.insert_to_group(self.button_group)
 
@@ -456,6 +530,7 @@ class SampleConfiguration(QtWidgets.QGroupBox):
 
     def change_method(self, method):
         self.method = method
+        self.method.sampleSizeChanged.emit(self.method.get_model().n)
 
     class Method(QtWidgets.QWidget):
 
@@ -532,7 +607,16 @@ class SampleConfiguration(QtWidgets.QGroupBox):
         if activate:
             self.parameters.select()
 
-        self.parameters.widget.n.setDisabled(activate)
+        # self.parameters.widget.n.setDisabled(activate) # Used in student's t, not used in normal distribution
+        self.parameters.widget.mean.setDisabled(activate)
+        self.values.setDisabled(activate)
+
+    def activate_interval_for_probability_configuration(self, activate):
+        if activate:
+            self.parameters.select()
+
+        self.parameters.widget.mean.setDisabled(activate)
+        self.parameters.widget.std.setDisabled(activate)
         self.values.setDisabled(activate)
 
 
@@ -540,6 +624,24 @@ class CalculationConfiguration(QtWidgets.QGroupBox):
 
     distributionActivated = QtCore.pyqtSignal(object)
     minimalSampleCountEnabled = QtCore.pyqtSignal(bool)
+    intervalForProbabilityEnabled = QtCore.pyqtSignal(bool)
+
+    class UncheckableButtonGroup(QtWidgets.QButtonGroup):
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            self.last_checked_button = None
+            self.buttonClicked.connect(self.__allow_uncheck)
+
+        def __allow_uncheck(self, button):
+            if self.last_checked_button != button:
+                self.last_checked_button = button
+            else:
+                self.sender().setExclusive(False)
+                button.setCheckState(QtCore.Qt.Unchecked)
+                self.sender().setExclusive(True)
+                self.last_checked_button = None
 
     def __init__(self, *args, **kwargs):
         super().__init__('Calculation', *args, **kwargs)
@@ -553,15 +655,43 @@ class CalculationConfiguration(QtWidgets.QGroupBox):
         label = QtWidgets.QLabel('α =')
         label.setToolTip('Confidence level')
 
+        self.mode_button_group = self.UncheckableButtonGroup()
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(label)
+        layout.addWidget(self.alpha)
+        layout.addWidget(self.__create_minimal_sample_count_configuration(
+            self.mode_button_group))
+        layout.addWidget(self.__create_interval_of_probability_configuration(
+            self.mode_button_group))
+        layout.addWidget(self.__create_distribution_configuration())
+
+        self.setLayout(layout)
+
+    def get_model(self):
+        return CalculationModel(self.alpha.value(),
+                                self.distribution_factory,
+                                self.margin_of_error.value(),
+                                self.margin_of_error.isEnabled(),
+                                self.feature_sample_size.value(),
+                                self.feature_sample_size.isEnabled())
+
+    def __distribution_activated(self, value, distribution):
+        distribution_class, distribution_factory = distribution
+        if value:
+            self.distribution_factory = distribution_factory
+            self.distributionActivated.emit(distribution_class)
+
+    def __create_minimal_sample_count_configuration(self, button_group):
         minimal_sample_count_group = QtWidgets.QGroupBox('Margin of error')
         minimal_sample_count_group.setToolTip(
-            'Enable to calculate minimal sample count. It determines <i>n</i> that results in μ<sub>0</sub> ± <i>margin of error</i>')
+            'Enable to calculate minimal sample count. It determines <i>n</i> that results in x̄ ± <i>margin of error</i> confidence interval')
 
         self.margin_of_error = QtWidgets.QDoubleSpinBox()
+        self.margin_of_error.setRange(0.0001, NUMBER_LIMIT)
         self.margin_of_error.setValue(1)
         self.margin_of_error.setSingleStep(0.5)
         self.margin_of_error.setDecimals(4)
-        self.margin_of_error.setRange(0.0001, NUMBER_LIMIT)
         self.margin_of_error.setDisabled(True)
 
         enable_minimal_sample_count = QtWidgets.QCheckBox()
@@ -569,46 +699,59 @@ class CalculationConfiguration(QtWidgets.QGroupBox):
             self.margin_of_error.setEnabled)
         enable_minimal_sample_count.stateChanged.connect(
             lambda state: self.minimalSampleCountEnabled.emit(state))
+        button_group.addButton(enable_minimal_sample_count)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(enable_minimal_sample_count)
         layout.addWidget(self.margin_of_error)
         minimal_sample_count_group.setLayout(layout)
 
+        return minimal_sample_count_group
+
+    def __create_interval_of_probability_configuration(self, button_group):
+        interval_for_probability_group = QtWidgets.QGroupBox(
+            'Feature sample size')
+        interval_for_probability_group.setToolTip(
+            'Enable to calculate confidence interval for probability that randomly selected element has a certain feature')
+
+        self.feature_sample_size = QtWidgets.QSpinBox()
+        self.feature_sample_size.setRange(1, NUMBER_LIMIT)
+        self.feature_sample_size.setValue(100)
+        self.feature_sample_size.setDisabled(True)
+
+        enable_interval_for_probability = QtWidgets.QCheckBox()
+        enable_interval_for_probability.stateChanged.connect(
+            self.feature_sample_size.setEnabled)
+        enable_interval_for_probability.stateChanged.connect(
+            lambda state: self.intervalForProbabilityEnabled.emit(state))
+        button_group.addButton(enable_interval_for_probability)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(enable_interval_for_probability)
+        layout.addWidget(self.feature_sample_size)
+        interval_for_probability_group.setLayout(layout)
+
+        return interval_for_probability_group
+
+    def __create_distribution_configuration(self):
         distribution = QtWidgets.QGroupBox('Distribution')
         self.normal = QtWidgets.QRadioButton('Normal')
         self.normal.toggled.connect(
-            lambda value: self.activated(value, (NormalDistribution, lambda mean, var, _: NormalDistribution(mean, var))))
+            lambda value: self.__distribution_activated(value, (NormalDistribution,
+                                                                lambda mean, var, _: NormalDistribution(mean, var))))
         self.normal.setChecked(True)
 
         self.students_t = QtWidgets.QRadioButton("Student's t")
         self.students_t.toggled.connect(
-            lambda value: self.activated(value, (StudentsTDistribution, lambda mean, var, n: StudentsTDistribution(mean, var, n))))
+            lambda value: self.__distribution_activated(value, (StudentsTDistribution,
+                                                                lambda mean, var, n: StudentsTDistribution(n, mean, var))))
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.normal)
         layout.addWidget(self.students_t)
         distribution.setLayout(layout)
 
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(label)
-        layout.addWidget(self.alpha)
-        layout.addWidget(minimal_sample_count_group)
-        layout.addWidget(distribution)
-
-        self.setLayout(layout)
-
-    def activated(self, value, distribution):
-        distribution_class, distribution_factory = distribution
-        if value:
-            self.distribution_factory = distribution_factory
-            self.distributionActivated.emit(distribution_class)
-
-    def get_model(self):
-        return CalculationModel(self.alpha.value(),
-                                self.distribution_factory,
-                                self.margin_of_error.value(),
-                                self.margin_of_error.isEnabled())
+        return distribution
 
 
 class DistributionPlot(pg.PlotWidget):
@@ -684,6 +827,7 @@ class SolutionDescription(QtWidgets.QGroupBox):
         self.conclusion = QtWidgets.QLabel('')
         self.interval = QtWidgets.QLabel('')
         self.minimal_sample_count = QtWidgets.QLabel('')
+        self.interval_for_probability = QtWidgets.QLabel('')
 
         layout = QtWidgets.QVBoxLayout()
 
@@ -722,17 +866,31 @@ class SolutionDescription(QtWidgets.QGroupBox):
         layout.addLayout(h_layout)
 
         h_layout = QtWidgets.QHBoxLayout()
-        h_layout.addWidget(QtWidgets.QLabel('Min. sample count:'))
+        h_layout.addWidget(QtWidgets.QLabel(
+            '<strong>Min. sample count:</strong>'))
         h_layout.addStretch()
         h_layout.addWidget(self.minimal_sample_count)
         h_layout.setContentsMargins(0, 0, 0, 0)
         self.minimal_sample_count_widget = QtWidgets.QWidget()
         self.minimal_sample_count_widget.setLayout(h_layout)
+        self.minimal_sample_count_widget.setToolTip('Minimal sample count')
         layout.addWidget(self.minimal_sample_count_widget)
+
+        h_layout = QtWidgets.QHBoxLayout()
+        h_layout.addWidget(QtWidgets.QLabel(
+            '<strong>Conf. interval for prob.:</strong>'))
+        h_layout.addStretch()
+        h_layout.addWidget(self.interval_for_probability)
+        h_layout.setContentsMargins(0, 0, 0, 0)
+        self.interval_for_probability_widget = QtWidgets.QWidget()
+        self.interval_for_probability_widget.setToolTip(
+            'Confidence interval for probability')
+        self.interval_for_probability_widget.setLayout(h_layout)
+        layout.addWidget(self.interval_for_probability_widget)
 
         self.setLayout(layout)
 
-    def update(self, symbol, test, z, z_alpha, interval, result, minimal_sample_count_result):
+    def update(self, symbol, test, z, z_alpha, interval, result, minimal_sample_count_result, interval_for_probability_result):
         self.condition_label_lhs.setText(f'{symbol} =')
         self.condition_label_rhs.setText(f'{symbol}<sub>α</sub> =')
 
@@ -751,6 +909,11 @@ class SolutionDescription(QtWidgets.QGroupBox):
         self.minimal_sample_count_widget.setVisible(
             minimal_sample_count_result[0])
 
+        self.interval_for_probability.setText(
+            f'Proportion: {interval_for_probability_result[2]:.3f}\n{interval_for_probability_result[1][0]:.4f} — {interval_for_probability_result[1][1]:.4f}')
+        self.interval_for_probability_widget.setVisible(
+            interval_for_probability_result[0])
+
 
 class ResultPanel(QtWidgets.QGroupBox):
 
@@ -768,7 +931,7 @@ class ResultPanel(QtWidgets.QGroupBox):
         self.plot.update(calculator.z, calculator.N, calculator.z_alpha,
                          calculator.is_left_test, calculator.is_right_test)
         self.solution.update(calculator.N.symbol(), calculator.hypothesis_test, calculator.z, calculator.z_alpha,
-                             calculator.confidence_interval, calculator.rejected, (calculator.include_sample_count, calculator.minimal_sample_count))
+                             calculator.confidence_interval_for_average, calculator.rejected, (calculator.include_sample_count, calculator.minimal_sample_count), (calculator.include_interval_for_probability, calculator.interval_for_probability, calculator.probability))
 
     def __build_normal_plot(self):
         self.plot = DistributionPlot()
@@ -810,11 +973,19 @@ class Controller:
 
         self.window.setLayout(v_layout)
 
+        self.sample_configuration.sampleSizeChanged.connect(
+            self.calculation_configuration.feature_sample_size.setMaximum)
+        self.calculation_configuration.feature_sample_size.setMaximum(
+            self.sample_configuration.get_model().n)
+
         self.calculation_configuration.distributionActivated.connect(
             self.sample_configuration.apply_distribution)
 
         self.calculation_configuration.minimalSampleCountEnabled.connect(
             self.__activate_minimal_sample_count_configuration)
+
+        self.calculation_configuration.intervalForProbabilityEnabled.connect(
+            self.__activate_interval_for_probability_configuration)
 
     def show(self):
         self.window.show()
@@ -831,6 +1002,9 @@ class Controller:
         except ValueError as e:
             QtWidgets.QMessageBox.critical(
                 self.window, 'Error', f'Invalid configuration: {str(e)}')
+        except OverflowError as e:
+            QtWidgets.QMessageBox.critical(
+                self.window, 'Error', f"Caclulation overflow. Tip: Student's t distribution is likely to overflow for a high sample size (gamma function).")
 
     def __create_hypotheses(self):
         self.H0 = HypothesisWidget(
@@ -871,15 +1045,24 @@ class Controller:
         self.sample_configuration.activate_minimal_sample_count_configuration(
             activate)
 
+    def __activate_interval_for_probability_configuration(self, activate):
+        self.sample_configuration.activate_interval_for_probability_configuration(
+            activate)
+
+        self.H0.set_test(TailTest.TWO)  # Two-tailed
+        self.H0.setDisabled(activate)
+        self.H1.setDisabled(activate)
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
-    # Lecture examples with dust emission
+    # Lecture examples
 
-    # Z-test
+    # Z-test (dust emission)
     assert(check_mean_greater(
         0.01, NormalDistribution(1000, 400), 1005, 196) == True)
     assert(check_mean_different(
@@ -889,13 +1072,29 @@ if __name__ == '__main__':
     assert(check_mean_lesser(0.01, NormalDistribution(1000, 400),
            1005, 196) == False)  # Inverse of the first case
 
-    # Confidence interval
-    assert(all([math.isclose(actual, expected, abs_tol=2e-2) for actual, expected in zip(confidence_interval(
+    # Confidence interval for average (length of spaghetti strand, known σ)
+    assert(all([math.isclose(actual, expected, abs_tol=2e-4) for actual, expected in zip(confidence_interval_for_average(
+        TailTest.TWO, TailTest.TWO.z_alpha(NormalDistribution, 0.05), 7.5, 2.3, 100), (7.0492, 7.9508))]))
+
+    # Confidence interval for average (length of spaghetti strand, unknown σ)
+    assert(all([math.isclose(actual, expected, abs_tol=2e-3) for actual, expected in zip(confidence_interval_for_average(
+        TailTest.TWO, TailTest.TWO.z_alpha(StudentsTDistribution(10), 0.05), 7.5, 2.3, 10), (5.855, 9.145))]))
+
+    # Confidence interval for average (dust emission)
+    assert(all([math.isclose(actual, expected, abs_tol=2e-2) for actual, expected in zip(confidence_interval_for_average(
         TailTest.TWO, TailTest.TWO.z_alpha(NormalDistribution, 0.01), 1005, 20, 196), (1001.31, 1008.69))]))
 
-    # Minimal sample count
+    # Confidence interval for probability (obese citizen)
+    assert(all([math.isclose(actual, expected, abs_tol=2e-4) for actual, expected in zip(confidence_interval_for_probability(
+        TailTest.TWO, TailTest.TWO.z_alpha(NormalDistribution, 0.05), 20, 200), (0.0584, 0.1416))]))  # Invalid range in slides (0.065, 0.135)?
+
+    # Minimal sample count (length of spaghetti strand, known σ)
     assert(math.isclose(minimal_sample_count(TailTest.TWO.z_alpha(
         NormalDistribution, 0.05), 0.45, 2.3), 100.4, abs_tol=2e-1))
+
+    # Minimal sample count (length of spaghetti strand, unknown σ)
+    assert(math.isclose(minimal_sample_count(TailTest.TWO.z_alpha(
+        StudentsTDistribution(10), 0.05), 1.5, 2.3), 12.03, abs_tol=2e-2))
 
     # Start GUI
     application = Controller()
