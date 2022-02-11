@@ -7,7 +7,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
     - https://www.danielsoper.com/statcalc/calculator.aspx?id=53 (sth like that, but not only for normal distribution)
 
-- Implementation of centers:
+- Implementation of centers:(Lumbardha - I'll take this if noone has it yet?!)
 
     - https://www.calculatorsoup.com/calculators/statistics/statistics.php (sth like that on the left)
 
