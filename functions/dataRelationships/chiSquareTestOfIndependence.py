@@ -42,15 +42,18 @@ possible_significance_levels = [
 ]
 
 def get_chi_square_distribution_value(dof: int, significance_level: str):
-    df_chi2 = pd.read_csv('../static/chi2Table.csv', index_col=0, delimiter=',')
+    df_chi2 = pd.read_csv('static/chi2Table.csv', index_col=0, delimiter=',')
     val =df_chi2.loc[dof, significance_level]
     return val
 
 
+print("Algorithm started: Chi2 independence test")
+
+"""
 print("Hypothesis: Data are independent.")
 
 significance_level = '0.05'
-test_value, dof = chi_square_independence_test('../data/chiSquareTestOfIndependence.csv')
+test_value, dof = chi_square_independence_test('data/chiSquareTestOfIndependence.csv')
 chi2_value = get_chi_square_distribution_value(dof, significance_level)
 print(f"Test value:\t{test_value}"
       f"\nDOF:\t\t{dof}"
@@ -62,3 +65,4 @@ if test_value > chi2_value:
 else:
     print("Hypothesis not rejected.")
 plt.show()
+"""

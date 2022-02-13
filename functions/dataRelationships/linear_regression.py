@@ -34,9 +34,16 @@ def draw_linear_regression(a: float, b: float, filename: str):
     plt.xlabel(column_names[0])
     plt.ylabel(column_names[1])
     plt.legend(['y=f(x)', 'regression line'])
-    plt.show()
+    fig = plt.gcf()
+    fig.set_size_inches(5, 4)
+    fig.tight_layout()
+    plt.savefig('temp_regression_chart.png',  dpi=100)
+    # plt.show()
 
 
+print("Algorithm started: Linear regression")
+
+"""
 filename = '../data/pearsonLinearCorrelationCoefficient.csv'
 r = pearson_linear_correlation_coefficient(filename)
 print(f"Correlation coefficient: {r}")
@@ -49,3 +56,4 @@ a, b = linear_regression(filename)
 print(f"a: {a}")
 print(f"b: {b}")
 draw_linear_regression(a, b, filename)
+"""

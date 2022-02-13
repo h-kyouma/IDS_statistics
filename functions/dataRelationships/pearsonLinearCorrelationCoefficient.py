@@ -17,7 +17,10 @@ def pearson_linear_correlation_coefficient(filename: str):
     return r
 
 
-r = pearson_linear_correlation_coefficient('../data/pearsonLinearCorrelationCoefficient.csv')
+print("Algorithm started: Pearson linear correlation coefficient.")
+
+"""
+r = pearson_linear_correlation_coefficient('data/pearsonLinearCorrelationCoefficient.csv')
 
 print(f"Correlation coefficient: {r}")
 
@@ -35,3 +38,4 @@ elif 0.5 <= abs(r) < 0.7:
     print(f"Strong {state} correlation")
 elif 0.7 <= abs(r) <= 1:
     print(f"Very strong {state} correlation")
+"""

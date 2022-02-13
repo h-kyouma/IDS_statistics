@@ -129,3 +129,7 @@ dmypy.json
 .pyre/
 
 .idea/
+
+*.lnk
+
+functions/dataRelationships/temp_regression_chart.png
