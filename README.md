@@ -99,13 +99,13 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
 - Relationship betwen data
 
-    - correlation (Barbara Morawska, as Bartłomiej Jabłoński, if that's not enough I'll take whole chapter.)
+    - correlation (Barbara Morawska)
 
         - correlation table, X2 independence test
 
         - pearson linear correlation coefiicient
 
-    - linear regression (Barbara Morawska, as Bartłomiej Jabłoński, if that's not enough I'll take whole chapter.)
+    - linear regression (Barbara Morawska)
 
     - t-student test (I've already done t-test in distributions, so I'll do it here Stanisław Zakrzewski)
 

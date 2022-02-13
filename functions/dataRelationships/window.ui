@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="loadDataButton">
+    <property name="geometry">
+     <rect>
+      <x>710</x>
+      <y>10</y>
+      <width>75</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Load data</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="loadDataTextEdit">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>10</y>
+      <width>431</width>
+      <height>31</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QTreeWidget" name="treeWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>241</width>
+      <height>541</height>
+     </rect>
+    </property>
+    <property name="animated">
+     <bool>false</bool>
+    </property>
+    <column>
+     <property name="text">
+      <string notr="true">Data relationships</string>
+     </property>
+    </column>
+    <item>
+     <property name="text">
+      <string>Linear Regression</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Pearson Linear Correlation Coefficient</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Chi2 Independence Test</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QStackedWidget" name="stackedWidget">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>80</y>
+      <width>511</width>
+      <height>431</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>1</number>
+    </property>
+    <widget class="QWidget" name="page">
+     <widget class="QLabel" name="label_title_linear_regression">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>20</y>
+        <width>311</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Linear Regression</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="chart">
+      <property name="geometry">
+       <rect>
+        <x>50</x>
+        <y>110</y>
+        <width>421</width>
+        <height>301</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="page_linear_regression">
+     <widget class="QLabel" name="label_title_chi2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>20</y>
+        <width>171</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Chi2 Independence Test</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comboBox_significance_level_chi2">
+      <property name="geometry">
+       <rect>
+        <x>130</x>
+        <y>60</y>
+        <width>69</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <item>
+       <property name="text">
+        <string>0.05</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.001</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.002</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.005</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.01</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.02</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.025</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.1</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.2</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.5</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.9</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.95</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.975</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.99</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>0.995</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="label_param_significance_level_chi2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>60</y>
+        <width>101</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Significance level:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_param_hypothesis_chi2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>100</y>
+        <width>91</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Hypothesis:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_hypothesis_chi2">
+      <property name="geometry">
+       <rect>
+        <x>130</x>
+        <y>100</y>
+        <width>141</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Data are independent.</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_param_dof_chi2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>140</y>
+        <width>91</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>DOF:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_dof_chi2">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>130</x>
+        <y>140</y>
+        <width>91</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>0</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_param_chi2_value_chi2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>180</y>
+        <width>91</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Chi2 value:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_chi2_value_chi2">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>130</x>
+        <y>180</y>
+        <width>91</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>0.0</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_param_verdict_chi2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>220</y>
+        <width>91</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Verdict:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_verdict_chi2">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>130</x>
+        <y>220</y>
+        <width>121</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Not calculated yet.</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="page_pearson">
+     <widget class="QLabel" name="label_title_pearson">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>20</y>
+        <width>311</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Pearson Linear Correlation Coefficient</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_param_coefficient_value_pearson">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>50</y>
+        <width>121</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Coefficient value:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_coefficient_value_person">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>50</y>
+        <width>151</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>0.00</string>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QPushButton" name="button_start">
+    <property name="geometry">
+     <rect>
+      <x>260</x>
+      <y>522</y>
+      <width>521</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Start calculator</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_data_validator">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>50</y>
+      <width>511</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionLoad"/>
+    <addaction name="actionDelete_data"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionInstruction"/>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionLoad">
+   <property name="text">
+    <string>Load data</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="actionDelete_data">
+   <property name="text">
+    <string>Delete data</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="actionInstruction">
+   <property name="text">
+    <string>Instruction</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+.idea/
+
+*.lnk
+
+functions/dataRelationships/temp_regression_chart.png
