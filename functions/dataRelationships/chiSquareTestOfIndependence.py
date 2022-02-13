@@ -1,5 +1,4 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 
 def chi_square_independence_test(filename: str):
     assert '.csv' in filename, "csv file should be loaded"
@@ -47,7 +46,7 @@ def get_chi_square_distribution_value(dof: int, significance_level: str):
     return val
 
 
-print("Algorithm started: Chi2 independence test")
+print("Algorithm loaded: Chi2 independence test")
 
 """
 print("Hypothesis: Data are independent.")

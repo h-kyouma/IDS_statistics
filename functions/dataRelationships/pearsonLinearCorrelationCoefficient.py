@@ -17,7 +17,7 @@ def pearson_linear_correlation_coefficient(filename: str):
     return r
 
 
-print("Algorithm started: Pearson linear correlation coefficient.")
+print("Algorithm loaded: Pearson linear correlation coefficient.")
 
 """
 r = pearson_linear_correlation_coefficient('data/pearsonLinearCorrelationCoefficient.csv')

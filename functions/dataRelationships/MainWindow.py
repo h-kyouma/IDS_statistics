@@ -5,9 +5,8 @@ from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from matplotlib.image import imread
 
-from functions.dataRelationships.chiSquareTestOfIndependence import chi_square_independence_test, \
-    get_chi_square_distribution_value
-from functions.dataRelationships.pearsonLinearCorrelationCoefficient import pearson_linear_correlation_coefficient
+from chiSquareTestOfIndependence import chi_square_independence_test, get_chi_square_distribution_value
+from pearsonLinearCorrelationCoefficient import pearson_linear_correlation_coefficient
 from linear_regression import draw_linear_regression, linear_regression
 
 class Ui_MainWindow(object):
@@ -76,6 +75,9 @@ class Ui_MainWindow(object):
         self.comboBox_significance_level_chi2.addItem("")
         self.comboBox_significance_level_chi2.addItem("")
         self.comboBox_significance_level_chi2.addItem("")
+        self.label_equation = QtWidgets.QLabel(self.page)
+        self.label_equation.setGeometry(QtCore.QRect(20, 40, 311, 16))
+        self.label_equation.setObjectName("label_equation")
         self.label_param_significance_level_chi2 = QtWidgets.QLabel(self.page_linear_regression)
         self.label_param_significance_level_chi2.setGeometry(QtCore.QRect(20, 60, 101, 16))
         self.label_param_significance_level_chi2.setObjectName("label_param_significance_level_chi2")
@@ -172,6 +174,8 @@ class Ui_MainWindow(object):
         self.treeWidget.itemClicked.connect(self.onItemClicked)
         self.button_start.clicked.connect(self.startCalculator)
 
+
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
@@ -202,9 +206,9 @@ class Ui_MainWindow(object):
         self.label_param_significance_level_chi2.setText(_translate("MainWindow", "Significance level:"))
         self.label_param_hypothesis_chi2.setText(_translate("MainWindow", "Hypothesis:"))
         self.label_hypothesis_chi2.setText(_translate("MainWindow", "Data are independent."))
-        self.label_param_dof_chi2.setText(_translate("MainWindow", "DOF:"))
-        self.label_dof_chi2.setText(_translate("MainWindow", "0"))
-        self.label_param_chi2_value_chi2.setText(_translate("MainWindow", "Chi2 value:"))
+        self.label_param_dof_chi2.setText(_translate("MainWindow", "test value:"))
+        self.label_dof_chi2.setText(_translate("MainWindow", "0.0"))
+        self.label_param_chi2_value_chi2.setText(_translate("MainWindow", "Chi2 alpha value:"))
         self.label_chi2_value_chi2.setText(_translate("MainWindow", "0.0"))
         self.label_param_verdict_chi2.setText(_translate("MainWindow", "Verdict:"))
         self.label_verdict_chi2.setText(_translate("MainWindow", "Not calculated yet."))
@@ -220,6 +224,7 @@ class Ui_MainWindow(object):
         self.actionDelete_data.setShortcut(_translate("MainWindow", "Ctrl+D"))
         self.actionInstruction.setText(_translate("MainWindow", "Instruction"))
         self.actionAbout.setText(_translate("MainWindow", "About"))
+        self.label_equation.setText(_translate("MainWindow", ""))
 
 
     def emptyString(self):
@@ -292,8 +297,20 @@ class Ui_MainWindow(object):
                 self.label_data_validator.setText("   Loaded data is not valid.")
                 self.label_data_validator.setStyleSheet("color: white;  background-color: red")
                 return
+
+            r = pearson_linear_correlation_coefficient(filename)
+            if abs(r) < 0.5:
+                self.label_data_validator.setText("   Correlation coefficient is smaller than 0.5!")
+                self.label_data_validator.setStyleSheet("color: white;  background-color: red")
             print(f"a: {a}")
             print(f"b: {b}")
+            print(f"r: {r}")
+            if b < 0:
+                tb = b * (-1)
+                self.label_equation.setText(f"y={a:{6}.{4}}x - {tb:{6}.{4}};     r={r:{6}.{4}}")
+            else:
+                self.label_equation.setText(f"y={a:{6}.{4}}x + {b:{6}.{4}};     r={r:{6}.{4}}")
+            self.label_equation.adjustSize()
             draw_linear_regression(a, b, filename)
 
             pixmap = QPixmap('temp_regression_chart.png')
@@ -319,15 +336,15 @@ class Ui_MainWindow(object):
                 state = 'negative'
 
             if -0.01 <= r < 0.01:
-                self.label_coefficient_value_person.setText(f"{r:{4}.{2}},  (no correlation)")
+                self.label_coefficient_value_person.setText(f"{r:{6}.{4}},  (no correlation)")
             elif 0.01 <= abs(r) < 0.3:
-                self.label_coefficient_value_person.setText(f"{r:{4}.{2}},  (weak {state} correlation)")
+                self.label_coefficient_value_person.setText(f"{r:{6}.{4}},  (weak {state} correlation)")
             elif 0.3 <= abs(r) < 0.5:
-                self.label_coefficient_value_person.setText(f"{r:{4}.{2}},  ({state} correlation)")
+                self.label_coefficient_value_person.setText(f"{r:{6}.{4}},  ({state} correlation)")
             elif 0.5 <= abs(r) < 0.7:
-                self.label_coefficient_value_person.setText(f"{r:{4}.{2}},  (strong {state} correlation)")
+                self.label_coefficient_value_person.setText(f"{r:{6}.{4}},  (strong {state} correlation)")
             elif 0.7 <= abs(r) <= 1:
-                self.label_coefficient_value_person.setText(f"{r:{4}.{2}},  (very strong {state} correlation)")
+                self.label_coefficient_value_person.setText(f"{r:{6}.{4}},  (very strong {state} correlation)")
             self.label_coefficient_value_person.adjustSize()
 
         elif page == 1:
@@ -357,7 +374,7 @@ class Ui_MainWindow(object):
             self.label_chi2_value_chi2.adjustSize()
             self.label_chi2_value_chi2.setEnabled(True)
 
-            self.label_dof_chi2.setText(f"{dof}")
+            self.label_dof_chi2.setText(f"{test_value:{6}.{4}}")
             self.label_dof_chi2.setEnabled(True)
 
 
