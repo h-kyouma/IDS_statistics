@@ -97,14 +97,11 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
 - Central limit theorem
 
-- Relationship betwen data
+- Relationship between data
 
-    - correlation (Barbara Morawska)
-
-        - correlation table, X2 independence test
-
-        - pearson linear correlation coefiicient
-
+    - correlation table  (Barbara Morawska)
+    - X2 independence test  (Barbara Morawska)
+    - pearson linear correlation coefficient  (Barbara Morawska)
     - linear regression (Barbara Morawska)
 
     - t-student test (I've already done t-test in distributions, so I'll do it here Stanisław Zakrzewski)
