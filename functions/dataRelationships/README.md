@@ -47,10 +47,14 @@ Results will show on the screen.
 
 ## Screenshots
 Linear regression window:
+
 ![Linear regression window](img/screenshot_linear_regression.PNG)
 
+
 Chi2 independence test:
+
 ![Chi2 independence test window](img/screenshot_chi2_independence_test.PNG)
 
 Pearson Correlation Coefficient:
+
 ![Main window](img/screenshot_pearson_correlation_coefficient.PNG)
