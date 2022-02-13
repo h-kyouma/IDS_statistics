@@ -1,4 +1,4 @@
-#Konra Clapa 
+#Konrad Clapa 
 # Generates random numbers to simulate standard normal distribution with $i number of samples 
 # Plots the normal disribution
 # Calaculates the cumulative density distribution
