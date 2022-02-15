@@ -106,7 +106,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
     - t-student test (I've already done t-test in distributions, so I'll do it here Stanisław Zakrzewski)
 
-    - ANOVA
+    - ANOVA (Bartłomiej Jabłoński)
 
 
 
