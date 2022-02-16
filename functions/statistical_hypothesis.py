@@ -4,7 +4,7 @@
 # Created By  : Bartłomiej Jabłoński
 # Created Date: 27/01/2022
 # ---------------------------------------------------------------------------
-""" Module for statistical hypothesis testing with Z-test and T-test"""
+""" Module for statistical hypothesis testing with Z-test and T-test """
 # ---------------------------------------------------------------------------
 
 
@@ -209,6 +209,8 @@ def minimal_sample_count(z_alpha, margin, std):
 def sample_parameters(sample):
     """
     Returns number of elements, mean and standard deviation of a sample.
+
+    :param list sample: List of elements.
     """
     assert(sample)
 
@@ -550,7 +552,7 @@ class SampleConfiguration(QtWidgets.QGroupBox):
             self.load.setSizePolicy(
                 QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
             self.load.setToolTip('Load from CSV file')
-            self.load.clicked.connect(self.load_data)
+            self.load.clicked.connect(self.__load_data)
 
             self.enable_method(False)
 
@@ -575,7 +577,7 @@ class SampleConfiguration(QtWidgets.QGroupBox):
             self.widget.setEnabled(value)
             self.load.setEnabled(value)
 
-        def load_data(self):
+        def __load_data(self):
             # Handle files that only contains numbers separated by commas in a single row
             file_name, _ = QtGui.QFileDialog.getOpenFileName(
                 self, 'Load sample', filter='CSV files (*.csv)')
