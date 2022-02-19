@@ -49,7 +49,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
 
 
-- Measures of (a)symmetry (dependent from previous task :-/ )
+- Measures of (a)symmetry: Kacper Kubicki - I'll take this.
 
     - https://www.socscistatistics.com/tests/skewness/default.aspx
 
