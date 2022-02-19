@@ -160,7 +160,7 @@ class GroupRow(QtWidgets.QWidget):
             raise ValueError(f'group "{group_label}" is empty')
         if len(group_values) < self.MIN_ELEMENTS:
             raise ValueError(
-                f'number of element is smaller than {self.MIN_ELEMENTS} in group "{group_label}"')
+                f'number of elements is smaller than {self.MIN_ELEMENTS} in group "{group_label}"')
 
         return Group(group_values, group_label)
 
@@ -292,7 +292,6 @@ class GroupWidget(QtWidgets.QGroupBox):
             return
 
         for group, group_values in zip(self.groups, values):
-            print(len(group_values))
             group.values.setText(','.join(map(str, group_values)))
 
 

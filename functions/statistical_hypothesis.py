@@ -76,6 +76,7 @@ class StudentsTDistribution:
         :param float alpha: lower probability tail.
         :param int df: degrees of freedom.
         """
+        assert(df > 0)
         # Am I allowed to use this function?
         return stats.t.ppf(alpha, df)
 
@@ -206,7 +207,7 @@ def minimal_sample_count(z_alpha, margin, std):
     return (z_alpha * std / margin) ** 2
 
 
-def sample_parameters(sample):
+def sample_parameters(sample, is_sample=True):
     """
     Returns number of elements, mean and standard deviation of a sample.
 
@@ -215,8 +216,11 @@ def sample_parameters(sample):
     assert(sample)
 
     n = len(sample)
+    assert(n - int(is_sample))
+
     mean = sum(sample) / n
-    std = math.sqrt(sum([(x - mean) ** 2 for x in sample])) / n
+    std = math.sqrt(
+        sum([(x - mean) ** 2 for x in sample]) / (n - int(is_sample)))
 
     return n, mean, std
 
@@ -415,7 +419,7 @@ class SampleParameters(QtWidgets.QWidget):
         super().__init__(*args, **kwargs)
 
         self.n = QtWidgets.QSpinBox()
-        self.n.setRange(1, NUMBER_LIMIT)
+        self.n.setRange(2, NUMBER_LIMIT)
         self.n.setValue(196)
         self.n.valueChanged.connect(
             lambda value: self.sampleSizeChanged.emit(value))
@@ -481,7 +485,10 @@ class SampleValues(QtWidgets.QWidget):
         self.values.setText(','.join(map(str, sample)))
 
     def get_model(self):
-        n, mean, std = sample_parameters(self.__get_sample())
+        sample = self.__get_sample()
+        validate_sample(sample)
+
+        n, mean, std = sample_parameters(sample)
         if std == 0:
             raise ValueError('sample standard deviation is 0')
 
@@ -500,6 +507,14 @@ class SampleValues(QtWidgets.QWidget):
 
     def __values_changed(self, _):
         self.sampleSizeChanged.emit(len(self.__parse_values()))
+
+
+def validate_sample(sample, min_elements=2):
+    sample_length = len(sample)
+    if not sample_length:
+        raise ValueError('empty sample')
+    if sample_length < min_elements:
+        raise ValueError(f'number of values is smaller than {min_elements}')
 
 
 class SampleConfiguration(QtWidgets.QGroupBox):
@@ -532,7 +547,10 @@ class SampleConfiguration(QtWidgets.QGroupBox):
 
     def change_method(self, method):
         self.method = method
-        self.method.sampleSizeChanged.emit(self.method.get_model().n)
+        try:
+            self.method.sampleSizeChanged.emit(self.method.get_model().n)
+        except ValueError as e:
+            self.method.sampleSizeChanged.emit(1)
 
     class Method(QtWidgets.QWidget):
 
@@ -589,8 +607,7 @@ class SampleConfiguration(QtWidgets.QGroupBox):
                     file_name, dtype=float, header=None, nrows=1, index_col=False, float_precision='high').dropna('columns')
                 sample = data_frame.values[0].tolist()
 
-                if not len(sample):
-                    raise ValueError('empty sample')
+                validate_sample(sample)
             except (FileNotFoundError, ValueError) as e:
                 QtWidgets.QMessageBox.critical(
                     self, 'Error', f'Failed to load {file_name}\nCause: {str(e)}')
@@ -975,8 +992,8 @@ class Controller:
 
         self.window.setLayout(v_layout)
 
-        self.sample_configuration.sampleSizeChanged.connect(
-            self.calculation_configuration.feature_sample_size.setMaximum)
+        self.sample_configuration.sampleSizeChanged.connect(lambda v:
+            self.calculation_configuration.feature_sample_size.setMaximum(max(v, 1)))
         self.calculation_configuration.feature_sample_size.setMaximum(
             self.sample_configuration.get_model().n)
 
