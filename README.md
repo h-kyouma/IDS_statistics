@@ -27,7 +27,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
 
 
-- Implementation of dispertion measures: Bartlomiej Jadwiszczak - I will take care of this chapter
+- Implementation of dispertion measures: Bartlomiej Jadwiszczak [Done in dispertion package]
 
     - https://www.calculatorsoup.com/calculators/statistics/statistics.php (sth like that on the left)
 
