@@ -2,3 +2,4 @@ PyQt5
 numpy
 matplotlib
 pandas
+scipy
