@@ -55,6 +55,7 @@ def _shapiro_wilk_test_p_value(w_statistic: float, n_samples: int) -> float:
         
         return 1 - _norm_dist_cdf((y - m) / s, 0, 1)
     else:
+        n_samples = math.log(n_samples)
         y = math.log(1 - w_statistic)
         m = sum((w * n_samples**i for i, w in enumerate(c5)))
         s = math.exp(sum((w * n_samples**i for i, w in enumerate(c6))))
@@ -71,7 +72,7 @@ def shapiro_wilk_test(samples: List[int]) -> Tuple[float, float]:
 
     m = [_inverse_gaussian_cdf((i - (3 / 8)) / (n_samples + 0.25), 0.0, 1.0)
          for i in range(1, n_samples+1)]
-    sum_m2 = sum([x*2 for x in m])
+    sum_m2 = sum([x**2 for x in m])
     w = [x / math.sqrt(sum_m2) for x in m]
 
     if n_samples == 3:
