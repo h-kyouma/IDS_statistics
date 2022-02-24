@@ -71,7 +71,7 @@ class Ui_MainWindow(object):
         self.label_title_linear_regression.setFont(font)
         self.chart = QLabel(self.page)
         self.chart.setObjectName(u"chart")
-        self.chart.setGeometry(QRect(50, 110, 421, 301))
+        self.chart.setGeometry(QRect(10, 60, 421, 301))
         self.stackedWidget.addWidget(self.page)
         self.page_linear_regression = QWidget()
         self.page_linear_regression.setObjectName(u"page_linear_regression")
