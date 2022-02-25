@@ -5,6 +5,7 @@ import csv
 import math
 
 def sign_test_mean(csv_file='data\SignTestMean.csv'):
+    print("Sign test for mean value.\nData file: " + csv_file)
     rows = []
     with open(csv_file, 'r',encoding = 'utf-8-sig') as file:
         csvreader = csv.DictReader(file, delimiter =';')
@@ -47,7 +48,7 @@ if __name__ == '__main__':
     test_result = sign_test_mean()
     print("Sign Test results: " + str(test_result))
     if test_result['result'] < test_result['alpha']:
-        print("HO hypothesis rejected")
+        print("HO hypothesis rejected (result is " + str(test_result['result']) + ", which is smaller than alpha = " + str(test_result['alpha']) + ")")
     else:
-        print("HO hypothesis is NOT rejected")
+        print("HO hypothesis is NOT rejected (result is " + str(test_result['result']) + ", which is smaller than alpha = " + str(test_result['alpha']) + ")")
 
