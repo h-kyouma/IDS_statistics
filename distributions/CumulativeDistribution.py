@@ -2,7 +2,7 @@
 # Generates random numbers to simulate standard normal distribution with $i number of samples 
 # Plots the normal disribution
 # Calaculates the cumulative distribution
-# Plots the cumulative density distribution
+# Plots the cumulative distribution
 
 import matplotlib.pyplot as plt
 import numpy as np
