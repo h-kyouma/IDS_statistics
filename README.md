@@ -5,7 +5,7 @@ Repo for statistics project at IDS PŁ, winter semester 2021/2022
 
 - Cumulative distribution function [DONE] (Konrad Clapa):
 
-    - https://www.danielsoper.com/statcalc/calculator.aspx?id=53 (sth like that, but not only for normal distribution)
+script:  https://github.com/h-kyouma/IDS_statistics/blob/main/distributions/CumulativeDistribution.py 
 
 - Implementation of centers:(Lumbardha - I'll take this if noone has it yet?!)
 
